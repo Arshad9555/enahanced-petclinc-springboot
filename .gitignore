@@ -16,4 +16,4 @@ target/
 
 # OS
 .DS_Store
-LICENSE.txt
+*LICENSE.txt
