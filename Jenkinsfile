@@ -9,7 +9,7 @@ pipeline {
                 git branch: 'prod' , url: 'https://github.com/bkrrajmali/enahanced-petclinc-springboot.git'
         }
       }
-        stage('Compile with Maven ') {
+        stage('Validate with Maven ') {
             steps {
                 sh 'mvn validate'
             }
