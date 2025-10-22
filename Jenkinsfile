@@ -54,7 +54,7 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker Image......."
-                    docker.build -t ("${IMAGE_NAME}:${IMAGE_TAG}") 
+                    docker.build ("${IMAGE_NAME}:${IMAGE_TAG}") 
                 }
             }
         }
