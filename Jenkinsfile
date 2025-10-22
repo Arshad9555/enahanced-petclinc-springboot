@@ -3,6 +3,10 @@ pipeline {
     tools {
         maven 'maven'
     }
+    environment{
+        IMAGE_NAME = 'springbootapp'
+        IMAGE_TAG = 'latest'
+    }
     stages {
         stage('Checkout FROM GIT') {
             steps {
@@ -43,6 +47,14 @@ pipeline {
             steps {
                 timeout(time: 1, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
+                }
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                script {
+                    echo "Building Docker Image......."
+                    docker.build -t ("${IMAGE_NAME}:${IMAGE_TAG}") 
                 }
             }
         }
