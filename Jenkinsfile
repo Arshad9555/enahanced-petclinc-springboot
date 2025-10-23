@@ -10,6 +10,9 @@ pipeline {
         ACR_NAME = 'springbootdockerreg'
         ACR_LOGIN_SERVER = 'springbootdockerreg.azurecr.io'
         FULL_IMAGE_NAME = '${ACR_LOGIN_SERVER}/$IMAGE_NAME:$IMAGE_TAG'
+        RG              = "socgen"
+        NAME            = "myAKSCluster"
+
     }
     stages {
         stage('Checkout FROM GIT') {
@@ -83,6 +86,32 @@ pipeline {
                     docker tag ${IMAGE_NAME}:${IMAGE_TAG}:${FULL_IMAGE_NAME}
                     docker push ${FULL_IMAGE_NAME}
                     '''
+                }
+            }
+        }
+        stage('Azure Login TO ACR') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'azure-acr-spn', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
+                    script {
+                        echo "Azure Login to AKS"
+                        sh '''
+                        az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
+                        az aks get-credentials --resource-group $RG --name $NAME --overwrite-existing
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Deploy to AKS') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'azure-acr-spn', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
+                    script {
+                        echo "Azure Login to AKS"
+                        sh '''
+                        az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
+                        kubectl apply -f k8s/sprinboot-deployment.yaml
+                        '''
+                    }
                 }
             }
         }
