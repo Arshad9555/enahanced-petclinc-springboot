@@ -12,7 +12,6 @@ pipeline {
         FULL_IMAGE_NAME = '${ACR_LOGIN_SERVER}/$IMAGE_NAME:$IMAGE_TAG'
         RG              = "socgen"
         NAME            = "myAKSCluster"
-
     }
     stages {
         stage('Checkout FROM GIT') {
@@ -89,7 +88,7 @@ pipeline {
                 }
             }
         }
-        stage('Azure Login TO ACR') {
+        stage('Azure Login TO AKS') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'azure-acr-spn', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
                     script {
