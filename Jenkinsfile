@@ -13,16 +13,16 @@ pipeline {
                 git branch: 'prod' , url: 'https://github.com/bkrrajmali/enahanced-petclinc-springboot.git'
         }
       }
-        stage('Validate with Maven ') {
-            steps {
-                sh 'mvn validate'
-            }
-        }
-        stage('Compile with Maven ') {
-            steps {
-                sh 'mvn compile'
-            }
-        }
+        // stage('Validate with Maven ') {
+        //     steps {
+        //         sh 'mvn validate'
+        //     }
+        // }
+        // stage('Compile with Maven ') {
+        //     steps {
+        //         sh 'mvn compile'
+        //     }
+        // }
         stage('Sonar Analysis ') {
             environment {
                 SCANNER_HOME = tool 'Sonar-scanner'
