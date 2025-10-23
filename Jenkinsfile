@@ -9,7 +9,7 @@ pipeline {
         TENANT_ID ='ec78375d-0db0-42cf-82a6-2e6403e95936'
         ACR_NAME = 'springbootdockerreg'
         ACR_LOGIN_SERVER = 'springbootdockerreg.azurecr.io'
-        FULL_IMAGE_NAME = '${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}'
+        FULL_IMAGE_NAME = "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}"
         RG              = "socgen"
         NAME            = "myAKSCluster"
     }
@@ -83,6 +83,7 @@ pipeline {
                     echo "Docker Image Push to ACR"
                     sh '''
                     docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${FULL_IMAGE_NAME}
+                   
                     docker push ${FULL_IMAGE_NAME}
                     '''
                 }
