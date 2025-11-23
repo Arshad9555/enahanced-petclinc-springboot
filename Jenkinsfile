@@ -6,6 +6,9 @@ pipeline {
         IMAGE_NAME = 'springbootapp'           // Docker image name
         AKS_RESOURCE_GROUP = 'demo11'          // AKS resource group
         AKS_CLUSTER_NAME = 'lucky-aks'         // AKS cluster name
+    }tools {
+        maven 'Maven-3.9.4'   // Match exactly the name you set in Jenkins Global Tools
+        jdk 'Java-17'         // Match the JDK name in Jenkins
     }
     stages {
         stage('Checkout') {
