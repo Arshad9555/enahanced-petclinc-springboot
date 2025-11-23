@@ -1,119 +1,48 @@
 pipeline {
     agent any
-    tools {
-        maven 'maven'
-    }
-    environment{
-        IMAGE_NAME = 'springbootapp'
-        IMAGE_TAG = 'latest'
-        TENANT_ID ='ec78375d-0db0-42cf-82a6-2e6403e95936'
-        ACR_NAME = 'springbootdockerreg'
-        ACR_LOGIN_SERVER = 'springbootdockerreg.azurecr.io'
-        FULL_IMAGE_NAME = "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}"
-        RG              = "socgen"
-        NAME            = "myAKSCluster"
+    environment {
+        AZURE_CREDENTIALS = 'azure-lucky'      // Your Jenkins Azure credential ID
+        ACR_NAME = 'luckyregistry'             // Your Azure Container Registry name
+        IMAGE_NAME = 'springbootapp'           // Docker image name
+        AKS_RESOURCE_GROUP = 'demo11'          // AKS resource group
+        AKS_CLUSTER_NAME = 'lucky-aks'         // AKS cluster name
     }
     stages {
-        stage('Checkout FROM GIT') {
+        stage('Checkout') {
             steps {
-                git branch: 'prod' , url: 'https://github.com/bkrrajmali/enahanced-petclinc-springboot.git'
-        }
-      }
-        // stage('Validate with Maven ') {
-        //     steps {
-        //         sh 'mvn validate'
-        //     }
-        // }
-        // stage('Compile with Maven ') {
-        //     steps {
-        //         sh 'mvn compile'
-        //     }
-        // }
-        // stage('Sonar Analysis ') {
-        //     environment {
-        //         SCANNER_HOME = tool 'Sonar-scanner'
-        //     }   
-        //     steps {
-        //         withSonarQubeEnv('sonarserver') {
-        //             sh '''${SCANNER_HOME}/bin/sonar-scanner \
-        //             -Dsonar.organization=bkrrajmali \
-        //             -Dsonar.projectName=springbootjavaapp \
-        //             -Dsonar.projectKey=springbootjavaapp \
-        //             -Dsonar.java.binaries=.
-        //           '''
-        //         }
-        //     }         
-        // }
-         stage('Maven Package ') {
-            steps {
-                sh 'mvn package'
+                git branch: 'main', url: 'https://github.com/Arshad9555/enahanced-petclinc-springboot.git'
             }
         }
-        // stage('Sonar Quality Gate') {
-        //     steps {
-        //         timeout(time: 1, unit: 'MINUTES') {
-        //             waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
-        //         }
-        //     }
-        // }
+
+        stage('Build with Maven') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
         stage('Docker Build') {
             steps {
-                script {
-                    echo "Building Docker Image......."
-                    docker.build ("${IMAGE_NAME}:${IMAGE_TAG}") 
-                }
+                sh 'docker build -t $ACR_NAME.azurecr.io/$IMAGE_NAME:latest .'
             }
         }
-        stage('Azure Login TO ACR') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'azure-acr-spn', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
-                    script {
-                        echo "Azure Login Started"
-                        sh '''
-                        az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
-                        az acr login --name $ACR_NAME
-                        '''
-                    }
-                }
-            }
-        }
+
         stage('Docker Push to ACR') {
             steps {
-                script {
-                    echo "Docker Image Push to ACR"
-                    sh '''
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${FULL_IMAGE_NAME}
-                   
-                    docker push ${FULL_IMAGE_NAME}
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'acr-secret', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login $ACR_NAME.azurecr.io --username $DOCKER_USER --password-stdin'
+                    sh 'docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:latest'
                 }
             }
         }
-        stage('Azure Login TO AKS') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'azure-acr-spn', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
-                    script {
-                        echo "Azure Login to AKS"
-                        sh '''
-                        az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
-                        az aks get-credentials --resource-group $RG --name $NAME --overwrite-existing
-                        '''
-                    }
-                }
-            }
-        }
+
         stage('Deploy to AKS') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'azure-acr-spn', usernameVariable: 'AZURE_USERNAME', passwordVariable: 'AZURE_PASSWORD')]) {
-                    script {
-                        echo "Azure Login to AKS"
-                        sh '''
-                        az login --service-principal -u $AZURE_USERNAME -p $AZURE_PASSWORD --tenant $TENANT_ID
-                        kubectl apply -f k8s/sprinboot-deployment.yaml
-                        '''
-                    }
-                }
+                azureCLI(credentialsId: AZURE_CREDENTIALS, script: '''
+                    az aks get-credentials --resource-group $AKS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
+                    kubectl apply -f springboot-k8s/springboot-deploy.yaml
+                ''')
             }
         }
     }
 }
+
